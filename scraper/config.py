@@ -1,0 +1,5 @@
+JobBoardURL = "https://www.example-job-board.com"
+SEARCH_QUERY = "Software Engineer"
+LOCATION = "New York"
+EMAIL_ADDRESS = "you@example.com"
+EMAIL_PASSWORD = "yourpassword"
