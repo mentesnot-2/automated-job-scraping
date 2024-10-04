@@ -1,22 +1,40 @@
 import sqlite3
+from scraper.config import DB_PATH
 
-class Database:
-    def __init__(self, db_name='jobs.db'):
-        self.conn = sqlite3.connect(db_name)
-        self.cursor = self.conn.cursor()
-        self.create_table()
+def save_jobs_to_db(jobs):
+    """
+    Save scraped job data to an SQLite database.
+    """
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
 
-    def create_table(self):
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS jobs (title TEXT, company TEXT, link TEXT)''')
+    # Create the table if it doesn't exist
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS jobs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            company TEXT,
+            location TEXT
+        )
+    """)
 
-    def insert_job(self, job):
-        self.cursor.execute('INSERT INTO jobs (title, company, link) VALUES (?, ?, ?)',
-                            (job['title'], job['company'], job['link']))
-        self.conn.commit()
+    # Insert job entries
+    for job in jobs:
+        cursor.execute("""
+            INSERT INTO jobs (title, company, location)
+            VALUES (?, ?, ?)
+        """, (job["title"], job["company"], job["location"]))
 
-    def job_exists(self, link):
-        self.cursor.execute('SELECT * FROM jobs WHERE link = ?', (link,))
-        return self.cursor.fetchone() is not None
+    conn.commit()
+    conn.close()
 
-    def close(self):
-        self.conn.close()
+def get_all_jobs():
+    """
+    Retrieve all jobs from the database.
+    """
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM jobs")
+    rows = cursor.fetchall()
+    conn.close()
+    return rows

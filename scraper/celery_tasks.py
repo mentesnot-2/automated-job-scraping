@@ -1,16 +1,22 @@
 from celery import Celery
-from job_scraper import scrape_jobs
-from database import Database
-from email_notifier import send_email
+from scraper.job_scraper import scrape_jobs
+from scraper.database import save_jobs_to_db
+from scraper.email_notifier import send_email
+from scraper.config import CELERY_BROKER_URL, CELERY_RESULT_BACKEND, EMAIL_ADDRESS
 
-app = Celery('job_scraper', broker='redis://localhost:6379/0')
+# Set up Celery
+app = Celery("job_scraper", broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
 @app.task
-def scrape_and_notify():
-    db = Database()
+def run_scraping_task():
+    """
+    Celery task to run the job scraping process.
+    """
+    print("starting celery task ")
     jobs = scrape_jobs()
-    for job in jobs:
-        if not db.job_exists(job['link']):
-            db.insert_job(job)
-            send_email(job)
-    db.close()
+    save_jobs_to_db(jobs)
+    send_email(
+        subject="Job Scraping Completed",
+        body=f"Scraping completed. Total jobs scraped: {len(jobs)}",
+        recipient="sibhatmentesnot@gmail.com"
+    )
